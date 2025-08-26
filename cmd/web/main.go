@@ -3,6 +3,7 @@ package main
 import (
 	"database/sql"
 	"flag"
+	"html/template"
 	"log/slog"
 	"net/http"
 	"os"
@@ -18,16 +19,23 @@ type config struct {
 }
 
 type application struct {
-	logger   *slog.Logger
-	cfg      config
-	snippets *models.SnippetModel
+	logger        *slog.Logger
+	cfg           config
+	snippets      *models.SnippetModel
+	templateCache map[string]*template.Template
 }
 
 func main() {
 	logger := slog.New(slog.NewTextHandler(os.Stdout, nil))
+	templateCache, err := newTemplateCache()
+	if err != nil {
+		logger.Error(err.Error())
+		os.Exit(1)
+	}
 	app := &application{
-		logger: logger,
-		cfg:    config{},
+		logger:        logger,
+		cfg:           config{},
+		templateCache: templateCache,
 	}
 
 	flag.StringVar(&app.cfg.addr, "addr", ":4000", "HTTP network address")
