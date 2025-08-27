@@ -8,6 +8,7 @@ import (
 	"net/http"
 	"os"
 
+	"github.com/go-playground/form/v4"
 	_ "github.com/go-sql-driver/mysql"
 	"github.com/van9md/snippetbox/internal/models"
 )
@@ -23,19 +24,25 @@ type application struct {
 	cfg           config
 	snippets      *models.SnippetModel
 	templateCache map[string]*template.Template
+	formDecoder   *form.Decoder
 }
 
 func main() {
 	logger := slog.New(slog.NewTextHandler(os.Stdout, nil))
 	templateCache, err := newTemplateCache()
+
 	if err != nil {
 		logger.Error(err.Error())
 		os.Exit(1)
 	}
+
+	formDecoder := form.NewDecoder()
+
 	app := &application{
 		logger:        logger,
 		cfg:           config{},
 		templateCache: templateCache,
+		formDecoder:   formDecoder,
 	}
 
 	flag.StringVar(&app.cfg.addr, "addr", ":4000", "HTTP network address")
