@@ -65,7 +65,13 @@ func main() {
 	sessionManager.Lifetime = 12 * time.Hour
 	app.sessionManager = sessionManager
 
-	err = http.ListenAndServe(app.cfg.addr, app.routes())
+	srv := &http.Server{
+		Addr:     app.cfg.addr,
+		Handler:  app.routes(),
+		ErrorLog: slog.NewLogLogger(logger.Handler(), slog.LevelError),
+	}
+
+	err = srv.ListenAndServe()
 	logger.Error(err.Error())
 	os.Exit(1)
 }
