@@ -7,7 +7,10 @@ import (
 	"log/slog"
 	"net/http"
 	"os"
+	"time"
 
+	"github.com/alexedwards/scs/mysqlstore"
+	"github.com/alexedwards/scs/v2"
 	"github.com/go-playground/form/v4"
 	_ "github.com/go-sql-driver/mysql"
 	"github.com/van9md/snippetbox/internal/models"
@@ -20,11 +23,12 @@ type config struct {
 }
 
 type application struct {
-	logger        *slog.Logger
-	cfg           config
-	snippets      *models.SnippetModel
-	templateCache map[string]*template.Template
-	formDecoder   *form.Decoder
+	logger         *slog.Logger
+	cfg            config
+	snippets       *models.SnippetModel
+	templateCache  map[string]*template.Template
+	formDecoder    *form.Decoder
+	sessionManager *scs.SessionManager
 }
 
 func main() {
@@ -55,6 +59,11 @@ func main() {
 	db, err := openDB(app.cfg.dsn)
 	defer db.Close()
 	app.snippets = &models.SnippetModel{DB: db}
+
+	sessionManager := scs.New()
+	sessionManager.Store = mysqlstore.New(db)
+	sessionManager.Lifetime = 12 * time.Hour
+	app.sessionManager = sessionManager
 
 	err = http.ListenAndServe(app.cfg.addr, app.routes())
 	logger.Error(err.Error())
