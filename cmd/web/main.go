@@ -47,7 +47,6 @@ func main() {
 	app := &application{
 		logger:        logger,
 		cfg:           config{},
-		users:         &models.UserModel{},
 		templateCache: templateCache,
 		formDecoder:   formDecoder,
 	}
@@ -62,6 +61,7 @@ func main() {
 	db, err := openDB(app.cfg.dsn)
 	defer db.Close()
 	app.snippets = &models.SnippetModel{DB: db}
+	app.users = &models.UserModel{DB: db}
 
 	sessionManager := scs.New()
 	sessionManager.Store = mysqlstore.New(db)
