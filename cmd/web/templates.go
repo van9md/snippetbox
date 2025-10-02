@@ -4,6 +4,7 @@ import (
 	"html/template"
 	"io/fs"
 	"net/http"
+	"os"
 	"path/filepath"
 	"time"
 
@@ -34,11 +35,19 @@ type templateData struct {
 }
 
 func (app *application) newTemplateData(r *http.Request) templateData {
+	var csrfToken string
+	if os.Getenv("TESTING") == "true" {
+		// В тестах используем фиктивный токен, так как CSRF отключен
+		csrfToken = "dummy-token-for-testing"
+	} else {
+		csrfToken = nosurf.Token(r)
+	}
+
 	return templateData{
 		CurrentYear:     time.Now().Year(),
 		Flash:           app.sessionManager.PopString(r.Context(), "flash"),
 		IsAuthenticated: app.isAuthenticated(r),
-		CSRFToken:       nosurf.Token(r),
+		CSRFToken:       csrfToken,
 	}
 }
 

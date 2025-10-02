@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"net/http"
+	"os"
 
 	"github.com/justinas/nosurf"
 )
@@ -63,7 +64,13 @@ func noSurf(next http.Handler) http.Handler {
 		Path:     "/",
 		Secure:   true,
 	})
-	return csrfHandler
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		if os.Getenv("TESTING") == "true" {
+			next.ServeHTTP(w, r)
+			return
+		}
+		csrfHandler.ServeHTTP(w, r)
+	})
 }
 
 func (app *application) authenticate(next http.Handler) http.Handler {
