@@ -1,10 +1,10 @@
 package main
 
 import (
+	"github.com/van9md/snippetbox/internal/assert"
 	"net/http"
 	"net/url"
 	"testing"
-	"github.com/van9md/snippetbox/internal/assert"
 )
 
 func TestPing(t *testing.T) {
