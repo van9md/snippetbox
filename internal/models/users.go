@@ -3,6 +3,7 @@ package models
 import (
 	"database/sql"
 	"errors"
+	"log"
 	"strings"
 	"time"
 
@@ -27,12 +28,13 @@ type UserModelInterface interface {
 	Authenticate(email, password string) (int, error)
 	Exists(id int) (bool, error)
 	Get(id int) (User, error)
+	PasswordUpdate(id int, password, newPassword string) error
 }
 
 func (m *UserModel) Insert(name, email, password string) error {
 	hashedPassword, err := bcrypt.GenerateFromPassword([]byte(password), 12)
 	if err != nil {
-		return nil
+		return err
 	}
 	stmt := `INSERT INTO users (name,email,hashed_password,created) VALUES(?,?,?,UTC_TIMESTAMP())`
 	_, err = m.DB.Exec(stmt, name, email, string(hashedPassword))
@@ -43,6 +45,33 @@ func (m *UserModel) Insert(name, email, password string) error {
 				return ErrDuplicateEmail
 			}
 		}
+		return err
+	}
+	return nil
+}
+
+func (m *UserModel) PasswordUpdate(id int, password, newPassword string) error {
+	hashedNewPassword, err := bcrypt.GenerateFromPassword([]byte(newPassword), 12)
+	if err != nil {
+		return err
+	}
+	var hashedPassword []byte
+	stmt := "SELECT hashed_password FROM users WHERE id = ?"
+	err = m.DB.QueryRow(stmt, id).Scan(&hashedPassword)
+	if err != nil {
+		return err
+	}
+	err = bcrypt.CompareHashAndPassword(hashedPassword, []byte(password))
+	if err != nil {
+		if errors.Is(err, bcrypt.ErrMismatchedHashAndPassword) {
+			log.Println("hi", err)
+			return ErrInvalidCredentials
+		}
+		return err
+	}
+	stmt = `UPDATE users set hashed_password = ? WHERE id=?`
+	_, err = m.DB.Exec(stmt, string(hashedNewPassword), id)
+	if err != nil {
 		return err
 	}
 	return nil
@@ -87,8 +116,8 @@ func (m *UserModel) Get(id int) (User, error) {
 		return User{}, ErrNoRecord
 	}
 	var result User
-	stmt := "SELECT name,email,created FROM users WHERE id=?"
-	err = m.DB.QueryRow(stmt, id).Scan(&result.Name, &result.Email, &result.Created)
+	stmt := "SELECT name,email,created,hashed_password FROM users WHERE id=?"
+	err = m.DB.QueryRow(stmt, id).Scan(&result.Name, &result.Email, &result.Created, &result.HashedPassword)
 	if err != nil {
 		return User{}, err
 	}
