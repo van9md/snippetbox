@@ -3,6 +3,7 @@ package main
 import (
 	"errors"
 	"fmt"
+	"log"
 	"net/http"
 	"strconv"
 
@@ -204,4 +205,22 @@ func (app *application) userLogoutPost(w http.ResponseWriter, r *http.Request) {
 func (app *application) about(w http.ResponseWriter, r *http.Request) {
 	data := app.newTemplateData(r)
 	app.render(w, r, http.StatusOK, "about.tmpl", data)
+}
+
+func (app *application) accountView(w http.ResponseWriter, r *http.Request) {
+	data := app.newTemplateData(r)
+	id := app.sessionManager.GetInt(r.Context(), "authenticatedUserID")
+	if id == 0 {
+		http.Redirect(w, r, "/user/login", http.StatusSeeOther)
+		log.Print(id)
+		return
+	}
+	var err error
+	data.User, err = app.users.Get(id)
+	if err != nil {
+		log.Print(err)
+		http.Redirect(w, r, "/user/login", http.StatusSeeOther)
+		return
+	}
+	app.render(w, r, http.StatusOK, "account.tmpl", data)
 }
