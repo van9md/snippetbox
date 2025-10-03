@@ -1,10 +1,12 @@
 package main
 
 import (
-	"github.com/van9md/snippetbox/internal/assert"
 	"net/http"
 	"net/url"
 	"testing"
+
+	"github.com/van9md/snippetbox/internal/assert"
+	"github.com/van9md/snippetbox/internal/models/mocks"
 )
 
 func TestPing(t *testing.T) {
@@ -166,4 +168,37 @@ func TestUserSignup(t *testing.T) {
 			}
 		})
 	}
+}
+
+func TestSnippetCreate(t *testing.T) {
+	app := newTestApplication(t)
+	app.snippets = &mocks.SnippetModel{}
+	app.users = &mocks.UserModel{}
+	ts := newTestServer(t, app.routes())
+	const (
+		validTitle    = "TestSnippet"
+		validText     = "Once upon a time..."
+		formTag       = `<form action="/snippet/create" method="POST">`
+		validEmail    = "alice@example.com"
+		validPassword = "pa$$word"
+	)
+
+	t.Run("Unauthenticated", func(t *testing.T) {
+		code, _, _ := ts.get(t, "/snippet/create")
+		assert.Equal(t, code, http.StatusSeeOther)
+	})
+	t.Run("Authenticated", func(t *testing.T) {
+		code, _, body := ts.get(t, "/user/login")
+		assert.Equal(t, code, http.StatusOK)
+		validCSRFToken := extractCSRFToken(t, body)
+		form := url.Values{}
+		form.Add("email", validEmail)
+		form.Add("password", validPassword)
+		form.Add("csrf_token", validCSRFToken)
+		code, _, body = ts.postForm(t, "/user/login", form)
+		assert.Equal(t, code, http.StatusSeeOther)
+		code, _, body = ts.get(t, "/snippet/create")
+		assert.Equal(t, code, http.StatusOK)
+		assert.StringContains(t, body, formTag)
+	})
 }

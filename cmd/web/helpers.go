@@ -35,12 +35,12 @@ func (app *application) serverError(w http.ResponseWriter, r *http.Request, err 
 		trace  = string(debug.Stack())
 	)
 
-	if app.cfg.debug{
+	if app.cfg.debug {
 		app.logger.Error(err.Error(), slog.String("method", method), slog.String("uri", uri), slog.String("trace", trace))
-		body:=fmt.Sprintf("%s\n%s",err,trace)
-		http.Error(w,body,http.StatusInternalServerError)
+		body := fmt.Sprintf("%s\n%s", err, trace)
+		http.Error(w, body, http.StatusInternalServerError)
 		return
-	}else{
+	} else {
 		app.logger.Error(err.Error(), slog.String("method", method), slog.String("uri", uri))
 	}
 	http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
