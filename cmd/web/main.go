@@ -21,6 +21,7 @@ type config struct {
 	addr      string
 	staticDir string
 	dsn       string
+	debug     bool
 }
 
 type application struct {
@@ -54,6 +55,7 @@ func main() {
 	flag.StringVar(&app.cfg.addr, "addr", ":4000", "HTTP network address")
 	flag.StringVar(&app.cfg.staticDir, "static-dir", "./ui/static", "Path to static assets")
 	flag.StringVar(&app.cfg.dsn, "dsn", "web:pass@/snippetbox?parseTime=true", "MySQL datasource name")
+	flag.BoolVar(&app.cfg.debug, "debug", false, "debug mode")
 	flag.Parse()
 
 	logger.Info("starting server", slog.String("addr", app.cfg.addr))
