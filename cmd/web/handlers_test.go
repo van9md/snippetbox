@@ -171,6 +171,7 @@ func TestUserSignup(t *testing.T) {
 }
 
 func TestSnippetCreate(t *testing.T) {
+	t.Setenv("TESTING", "true")
 	app := newTestApplication(t)
 	app.snippets = &mocks.SnippetModel{}
 	app.users = &mocks.UserModel{}
